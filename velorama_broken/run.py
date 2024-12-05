@@ -15,8 +15,6 @@ from ray import tune
 import statistics
 import scvelo as scv
 import pandas as pd
-import shutil
-
 
 from .models import *
 from .train import *
@@ -203,9 +201,8 @@ def execute_cmdline():
 
 	if not os.path.exists(os.path.join(args.save_dir,dir_name)):
 		os.mkdir(os.path.join(args.save_dir,dir_name))
-	
 
-	ray.init(object_store_memory=10**9, num_cpus=1)
+	ray.init(object_store_memory=10**9)
 
 	total_start = time.time()
 	lam_list = np.logspace(args.lam_start, args.lam_end, num=args.num_lambdas).tolist()
@@ -231,22 +228,10 @@ def execute_cmdline():
 			  'dir_name': dir_name,
 			  'reg_target': args.reg_target}
 
-	ngpu = 0.2 if (args.device == 'cuda') else 0 
+	ngpu = 0.2 if (args.device == 'gpu') else 0 
 	resources_per_trial = {"cpu": 1, "gpu": ngpu, "memory": 2 * 1024 * 1024 * 1024}
 	analysis = tune.run(train_model,resources_per_trial=resources_per_trial,config=config,
-						local_dir=os.path.join('results'))
-
-	target_dir = os.path.join('./results', dir_name)
-	os.makedirs(target_dir, exist_ok=True)  # Ensure the target directory exists
-    # Walk through all directories recursively
-	base_dir = './results'
-	for root, dirs, files in os.walk(base_dir):
-		if 'train' in root:  # Check if ‘train’ is in the directory path
-			for file in files:
-				if file.endswith('.pt'):  # Check if the file ends with ‘.pt’
-					source_path = os.path.join(root, file)
-					shutil.move(source_path, target_dir)  # Move the file
-					print(f"Moved: {source_path} to {target_dir}")
+						local_dir=os.path.join(args.root_dir,'results'))
 	
 	# aggregate results
 	lam_list = [np.round(lam,4) for lam in lam_list]

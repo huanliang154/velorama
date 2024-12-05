@@ -73,9 +73,7 @@ def construct_dag(adata,dynamics='rna_velocity',ptloc='pseudotime',velo_mode='st
 									 precomputed_pseudotime=adata.obs[ptloc].values).T
 
 	elif dynamics == 'rna_velocity':
-		sc.pp.pca(adata)
-		sc.pp.neighbors(adata, n_pcs=30, n_neighbors=n_neighbors)
-		scv.pp.moments(adata, n_pcs=None, n_neighbors=None, use_rep='X_rep')
+		scv.pp.moments(adata, n_neighbors=n_neighbors, use_rep='X_rep')
 		if velo_mode == 'dynamical':
 			scv.tl.recover_dynamics(adata)
 		scv.tl.velocity(adata,mode=velo_mode)
